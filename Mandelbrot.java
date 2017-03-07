@@ -58,6 +58,7 @@ public class Main extends Canvas {
 		this.createBufferStrategy(3);
 		bs = this.getBufferStrategy();
 		
+		// Render loop
 		zoomLoop();
 	}
 	
@@ -90,6 +91,7 @@ public class Main extends Canvas {
 		for(int x = 0; x < WIDTH; x++){
 			for(int y = 0; y < HEIGHT; y++){
 				
+				// Wrong place to do x/y transforms???
 				int color = calculatePoint(((x + xOffset) - WIDTH / 2f) / ZOOM, ((y + yOffset) - HEIGHT / 2f) / ZOOM);
 				
 				buffer.setRGB(x, y, color);
