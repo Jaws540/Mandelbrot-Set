@@ -15,19 +15,24 @@ public class Main extends Canvas {
 	private final int WIDTH = 800;
 	private final int HEIGHT = 600;
 	
-	private final int ITERATIONS = 100;
+	private final int ITERATIONS = 500;
 	
 	private int iteration = 0;
 	
-	private int ZOOM = 300;
-	private int xOffset = 2;
-	private int yOffset = 2;
+	private float ZOOM = 500;
+	private float xOffset = 0f;
+	private float yOffset = 0f;
 	
 	private float hueOffset = 0;
 	
 	private BufferStrategy bs = null;
 	
 	private boolean draw = true;
+	
+	private Timer timer = new Timer();
+	
+	private boolean[] keys = new boolean[65535];
+	private boolean[] keyReleased = new boolean[65535];
 	
 	public Main(){
 		
@@ -45,32 +50,32 @@ public class Main extends Canvas {
 			@Override
 			public void keyTyped(KeyEvent e) {}
 			@Override
-			public void keyPressed(KeyEvent e) {}
+			public void keyPressed(KeyEvent e) {
+				keys[e.getKeyCode()] = true;
+				keyReleased[e.getKeyCode()] = true;
+			}
 			@Override
 			public void keyReleased(KeyEvent e) {
-				if(e.getKeyCode() == KeyEvent.VK_SPACE){
-					draw = !draw;
-					System.out.println("Drawing: " + draw);
-				}
+				keys[e.getKeyCode()] = false;
 			}
 		});
 		
 		this.createBufferStrategy(3);
 		bs = this.getBufferStrategy();
 		
-		// Render loop
+		timer.init();
 		zoomLoop();
 	}
 	
 	public void zoomLoop(){
-		while(true){
+		/*while(true){
 			if(draw){
 				iteration++;
 				
 				// Current zoom and transform operations
-				ZOOM += iteration * 2;
-				xOffset -= (int) (iteration * 2.75);
-				//yOffset += 2;
+				//ZOOM += iteration; 
+				//xOffset -= iteration * 1.45;
+				//yOffset += 100/iteration;
 				
 				hueOffset += 0.01f;
 				
@@ -80,26 +85,96 @@ public class Main extends Canvas {
 				
 				bs.show();
 			}
+		}*/
+		
+		float elapsedTime;
+		float accumulator = 0f;
+		float interval = 1f / 60f;
+		
+		int ticks = 0;
+		int frames = 0;
+		long lastTimer = System.currentTimeMillis();
+		
+		while(true){
+			elapsedTime = timer.getElapsedTime();
+			accumulator += elapsedTime;
+			
+			while(accumulator >= interval){
+				ticks++;
+				update();
+				
+				accumulator -= interval;
+			}
+			
+			if(System.currentTimeMillis() - lastTimer > 1000){
+				lastTimer += 1000;
+				
+				if(true)
+					System.out.println("Updates per sec: " + ticks + ", Frames per sec: " + frames);
+				
+				ticks = 0;
+				frames = 0;
+			}
+			
+			hueOffset += 0.01f;
+			renderMandelbrot();
+			frames++;
 		}
 	}
 	
-	public void drawSet(Graphics g){
-		g.drawImage(buffer, 0, 0, null);
+	public void update(){
+		if(keys[KeyEvent.VK_A]){
+			xOffset -= .5 / ZOOM;
+			System.out.println("Move Left");
+		}else if(keys[KeyEvent.VK_D]){
+			xOffset += .5 / ZOOM;
+			System.out.println("Move Right");
+		}
+		
+		if(keys[KeyEvent.VK_W]){
+			yOffset -= .5 / ZOOM;
+			System.out.println("Move Up");
+		}else if(keys[KeyEvent.VK_S]){
+			yOffset += .5 / ZOOM;
+			System.out.println("Move Down");
+		}
+		
+		if(keys[KeyEvent.VK_SPACE]){
+			ZOOM /= 1.01;
+			System.out.println("Zoom out");
+		}else if(keys[KeyEvent.VK_SHIFT]){
+			ZOOM *= 1.01;
+			System.out.println("Zoom in");
+		}
+		
+		if(keyReleased[KeyEvent.VK_P] && !keys[KeyEvent.VK_P]){
+			draw = !draw;
+			System.out.println("Drawing: " + draw);
+			keyReleased[KeyEvent.VK_P] = false;
+		}
 	}
 	
 	public void renderMandelbrot(){
 		for(int x = 0; x < WIDTH; x++){
 			for(int y = 0; y < HEIGHT; y++){
 				
-				// Wrong place to do x/y transforms???
-				int color = calculatePoint(((x + xOffset) - WIDTH / 2f) / ZOOM, ((y + yOffset) - HEIGHT / 2f) / ZOOM);
+				int color = calculatePoint((x - WIDTH / 2f), (y - HEIGHT / 2f));
 				
 				buffer.setRGB(x, y, color);
 			}
 		}
+		
+		drawSet(bs.getDrawGraphics());
+		bs.show();
 	}
 	
 	public int calculatePoint(float x, float y){
+		x /= ZOOM;
+		x += xOffset;
+		
+		y /= ZOOM;
+		y += yOffset;
+		
 		float cx = x;
 		float cy = y;
 		
@@ -118,6 +193,10 @@ public class Main extends Canvas {
 		if(i == ITERATIONS) return 0x00000000;
 		
 		return Color.HSBtoRGB(((float) i / ITERATIONS + hueOffset) % 1, 0.5f, 1);
+	}
+	
+	public void drawSet(Graphics g){
+		g.drawImage(buffer, 0, 0, null);
 	}
 	
 	public static void main(String[] args){
