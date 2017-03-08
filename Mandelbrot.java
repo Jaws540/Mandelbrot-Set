@@ -64,7 +64,8 @@ public class Main extends Canvas {
 		bs = this.getBufferStrategy();
 		
 		timer.init();
-		zoomLoop();
+		
+		zoomLoop(); // Start loop
 	}
 	
 	public void zoomLoop(){
@@ -87,6 +88,8 @@ public class Main extends Canvas {
 			}
 		}*/
 		
+		
+		// Allows for some sense of steady updating (not too steady, but it does the trick)
 		float elapsedTime;
 		float accumulator = 0f;
 		float interval = 1f / 60f;
@@ -95,6 +98,7 @@ public class Main extends Canvas {
 		int frames = 0;
 		long lastTimer = System.currentTimeMillis();
 		
+		// Constant render loop
 		while(true){
 			elapsedTime = timer.getElapsedTime();
 			accumulator += elapsedTime;
@@ -117,7 +121,7 @@ public class Main extends Canvas {
 			}
 			
 			hueOffset += 0.01f;
-			renderMandelbrot();
+			renderMandelbrot(); // Render the set
 			frames++;
 		}
 	}
@@ -154,6 +158,9 @@ public class Main extends Canvas {
 		}
 	}
 	
+	/**
+	 * Renders the set based on the pixel coordinate on the buffered image
+	 */
 	public void renderMandelbrot(){
 		for(int x = 0; x < WIDTH; x++){
 			for(int y = 0; y < HEIGHT; y++){
@@ -164,10 +171,13 @@ public class Main extends Canvas {
 			}
 		}
 		
-		drawSet(bs.getDrawGraphics());
-		bs.show();
+		drawSet(bs.getDrawGraphics()); // Draws to canvas
+		bs.show(); // Switches buffer (not the image buffer but the screen buffers for the canvas)
 	}
 	
+	/**
+	 * Calculates the function and applies the zoom and the x/y transofrmations
+	 */
 	public int calculatePoint(float x, float y){
 		x /= ZOOM;
 		x += xOffset;
@@ -190,11 +200,14 @@ public class Main extends Canvas {
 			if(x * x + y * y > 4) break;
 		}
 		
-		if(i == ITERATIONS) return 0x00000000;
+		if(i == ITERATIONS) return 0x00000000; // Black if it does not diverge
 		
-		return Color.HSBtoRGB(((float) i / ITERATIONS + hueOffset) % 1, 0.5f, 1);
+		return Color.HSBtoRGB(((float) i / ITERATIONS + hueOffset) % 1, 0.5f, 1); // Color if it diverges
 	}
 	
+	/**
+	 * Actually draws the buffered image to the canvas
+	 */
 	public void drawSet(Graphics g){
 		g.drawImage(buffer, 0, 0, null);
 	}
